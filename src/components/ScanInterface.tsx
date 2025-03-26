@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, X, Check, Package, RefreshCw, Image as ImageIcon } from "lucide-react";
@@ -8,7 +9,7 @@ import { detectObjects, mockDetectObjects, DetectionResult, USE_REAL_API } from 
 export const ScanInterface = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scanResult, setScanResult] = useState<DetectionResult | null>(null);
+  const [scanResults, setScanResults] = useState<DetectionResult[] | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +32,7 @@ export const ScanInterface = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setIsScanning(true);
-        toast.info("Camera activated. Point at an item to scan.");
+        toast.info("Camera activated. Point at items to scan.");
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
@@ -93,18 +94,20 @@ export const ScanInterface = () => {
     toast.info("Processing image with YOLO detection...");
     
     try {
-      let result;
+      let results;
       
       // Use real API if enabled, otherwise use mock
       if (USE_REAL_API) {
-        result = await detectObjects(imageData);
+        results = await detectObjects(imageData);
       } else {
-        result = await mockDetectObjects();
+        results = await mockDetectObjects();
       }
       
-      if (result) {
-        setScanResult(result);
-        toast.success(`Detected ${result.name} (${result.quantity} items)!`);
+      if (results && results.length > 0) {
+        setScanResults(results);
+        toast.success(`Detected ${results.length} different item(s)!`);
+      } else {
+        toast.error("No objects detected in the image. Please try again.");
       }
     } catch (error) {
       console.error("Error processing image:", error);
@@ -116,7 +119,7 @@ export const ScanInterface = () => {
 
   const resetScan = () => {
     setCapturedImage(null);
-    setScanResult(null);
+    setScanResults(null);
   };
 
   const triggerFileInput = () => {
@@ -158,25 +161,29 @@ export const ScanInterface = () => {
                 </div>
               )}
               
-              {scanResult && !isProcessing && (
+              {scanResults && !isProcessing && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute bottom-0 left-0 right-0 glass p-4 text-left"
+                  className="absolute bottom-0 left-0 right-0 glass p-4 text-left max-h-[70%] overflow-y-auto"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Package className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">{scanResult.name}</h3>
+                    <h3 className="text-lg font-semibold">Detected Items</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Quantity</p>
-                      <p className="font-semibold">{scanResult.quantity}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Confidence</p>
-                      <p className="font-semibold">{Math.round(scanResult.confidence * 100)}%</p>
-                    </div>
+                  
+                  <div className="space-y-3">
+                    {scanResults.map((item, index) => (
+                      <div key={index} className="bg-black/30 p-3 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium">{item.name}</h4>
+                          <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                            {Math.round(item.confidence * 100)}%
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-300">Quantity: <span className="font-semibold">{item.quantity}</span></p>
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               )}
@@ -248,10 +255,11 @@ export const ScanInterface = () => {
             >
               <RefreshCw className="mr-2 w-4 h-4" /> New Scan
             </Button>
-            {scanResult && !isProcessing && (
+            {scanResults && !isProcessing && (
               <Button 
                 onClick={() => {
-                  toast.success(`Added ${scanResult.quantity} ${scanResult.name}(s) to inventory!`);
+                  const totalItems = scanResults.reduce((sum, item) => sum + item.quantity, 0);
+                  toast.success(`Added ${totalItems} items to inventory!`);
                   resetScan();
                 }}
                 className="rounded-full"

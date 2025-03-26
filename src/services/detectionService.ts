@@ -13,8 +13,9 @@ const API_URL = import.meta.env.VITE_DETECTION_API_URL || 'http://localhost:5000
 // Flag to toggle between real API and mock data (for development/testing)
 export const USE_REAL_API = import.meta.env.VITE_USE_REAL_API !== 'false';
 
-export const detectObjects = async (imageData: string): Promise<DetectionResult | null> => {
+export const detectObjects = async (imageData: string): Promise<DetectionResult[] | null> => {
   try {
+    console.log("Sending image to API for detection");
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -29,6 +30,7 @@ export const detectObjects = async (imageData: string): Promise<DetectionResult 
     }
 
     const data = await response.json();
+    console.log("Detection results:", data);
     return data;
   } catch (error) {
     console.error('Error during object detection:', error);
@@ -38,7 +40,7 @@ export const detectObjects = async (imageData: string): Promise<DetectionResult 
 };
 
 // For development and testing when the backend isn't available
-export const mockDetectObjects = (): Promise<DetectionResult> => {
+export const mockDetectObjects = (): Promise<DetectionResult[]> => {
   return new Promise((resolve) => {
     // Simulate API latency
     setTimeout(() => {
@@ -50,8 +52,8 @@ export const mockDetectObjects = (): Promise<DetectionResult> => {
         { name: "Pen", quantity: 8, confidence: 0.89 },
       ];
       
-      const randomIndex = Math.floor(Math.random() * mockItems.length);
-      resolve(mockItems[randomIndex]);
+      // Return all items to simulate multiple object detection
+      resolve(mockItems);
     }, 2000);
   });
 };
