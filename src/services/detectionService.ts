@@ -7,12 +7,15 @@ export interface DetectionResult {
   confidence: number;
 }
 
+// The API URL from environment variables or default to localhost during development
+const API_URL = import.meta.env.VITE_DETECTION_API_URL || 'http://localhost:5000/api/detect';
+
+// Flag to toggle between real API and mock data (for development/testing)
+export const USE_REAL_API = import.meta.env.VITE_USE_REAL_API !== 'false';
+
 export const detectObjects = async (imageData: string): Promise<DetectionResult | null> => {
   try {
-    // In a real implementation, this would be your API endpoint
-    const apiUrl = import.meta.env.VITE_DETECTION_API_URL || '/api/detect';
-    
-    const response = await fetch(apiUrl, {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,7 +24,8 @@ export const detectObjects = async (imageData: string): Promise<DetectionResult 
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();

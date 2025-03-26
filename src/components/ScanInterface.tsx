@@ -1,13 +1,9 @@
-
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, X, Check, Package, RefreshCw, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { detectObjects, mockDetectObjects, DetectionResult } from "@/services/detectionService";
-
-// Environment variable to toggle between real and mock API
-const USE_REAL_API = import.meta.env.VITE_USE_REAL_API === 'true';
+import { detectObjects, mockDetectObjects, DetectionResult, USE_REAL_API } from "@/services/detectionService";
 
 export const ScanInterface = () => {
   const [isScanning, setIsScanning] = useState(false);
@@ -108,7 +104,7 @@ export const ScanInterface = () => {
       
       if (result) {
         setScanResult(result);
-        toast.success("Item identified successfully!");
+        toast.success(`Detected ${result.name} (${result.quantity} items)!`);
       }
     } catch (error) {
       console.error("Error processing image:", error);
@@ -223,7 +219,6 @@ export const ScanInterface = () => {
           )}
         </AnimatePresence>
         
-        {/* Hidden canvas for capturing frames */}
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
