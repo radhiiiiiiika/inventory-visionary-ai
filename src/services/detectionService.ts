@@ -7,7 +7,7 @@ export interface DetectionResult {
   confidence: number;
 }
 
-// The API URL from environment variables or default to localhost during development
+// API URL for the backend - updated to match user's folder structure
 const API_URL = import.meta.env.VITE_DETECTION_API_URL || 'http://localhost:5000/api/detect';
 
 // Flag to toggle between real API and mock data (for development/testing)

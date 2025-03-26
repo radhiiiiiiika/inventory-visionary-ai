@@ -21,8 +21,9 @@ const Scan = () => {
             <div className="mt-4 p-4 bg-muted/30 rounded-lg max-w-2xl mx-auto text-sm">
               <h3 className="font-medium mb-2">Backend Setup:</h3>
               <ol className="list-decimal list-inside text-left space-y-1">
+                <li>Navigate to your <code className="bg-muted px-1 py-0.5 rounded">inventory-automation/backend</code> folder</li>
                 <li>Install Python dependencies: <code className="bg-muted px-1 py-0.5 rounded">pip install -r requirements.txt</code></li>
-                <li>Run the Flask server: <code className="bg-muted px-1 py-0.5 rounded">python server.py</code></li>
+                <li>Run your Flask app: <code className="bg-muted px-1 py-0.5 rounded">python app.py</code></li>
                 <li>Set <code className="bg-muted px-1 py-0.5 rounded">VITE_USE_REAL_API=true</code> to use the YOLO backend</li>
               </ol>
             </div>
