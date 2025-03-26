@@ -10,10 +10,13 @@ const Scan = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">Scan Inventory</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Use your camera or upload an image to instantly identify and count items in your inventory.
+              Use your camera or upload an image to identify and count items in your inventory using YOLO object detection.
             </p>
           </div>
           <ScanInterface />
+          <div className="mt-8 text-center text-sm text-muted-foreground">
+            <p>Powered by YOLOv8 object detection</p>
+          </div>
         </div>
       </div>
     </Layout>

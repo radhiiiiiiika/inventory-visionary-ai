@@ -4,14 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Camera, X, Check, Package, RefreshCw, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { detectObjects, mockDetectObjects, DetectionResult } from "@/services/detectionService";
+
+// Environment variable to toggle between real and mock API
+const USE_REAL_API = import.meta.env.VITE_USE_REAL_API === 'true';
 
 export const ScanInterface = () => {
   const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<null | {
-    name: string;
-    quantity: number;
-    confidence: number;
-  }>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scanResult, setScanResult] = useState<DetectionResult | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -69,8 +70,8 @@ export const ScanInterface = () => {
         const imageDataUrl = canvas.toDataURL("image/jpeg");
         setCapturedImage(imageDataUrl);
         
-        // Simulate AI processing
-        simulateAIProcessing();
+        // Process the image with object detection
+        processImage(imageDataUrl);
         
         // Stop the camera
         stopCamera();
@@ -85,30 +86,36 @@ export const ScanInterface = () => {
       reader.onload = (e) => {
         const imageDataUrl = e.target?.result as string;
         setCapturedImage(imageDataUrl);
-        simulateAIProcessing();
+        processImage(imageDataUrl);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const simulateAIProcessing = () => {
-    toast.info("Processing image...");
+  const processImage = async (imageData: string) => {
+    setIsProcessing(true);
+    toast.info("Processing image with YOLO detection...");
     
-    // Simulate processing delay
-    setTimeout(() => {
-      // Mock result - in a real app, this would come from an AI model
-      const mockItems = [
-        { name: "Office Chair", quantity: 3, confidence: 0.92 },
-        { name: "Desk Lamp", quantity: 5, confidence: 0.85 },
-        { name: "Notebook", quantity: 12, confidence: 0.97 },
-        { name: "Pencil Set", quantity: 8, confidence: 0.89 },
-      ];
+    try {
+      let result;
       
-      const randomIndex = Math.floor(Math.random() * mockItems.length);
-      setScanResult(mockItems[randomIndex]);
+      // Use real API if enabled, otherwise use mock
+      if (USE_REAL_API) {
+        result = await detectObjects(imageData);
+      } else {
+        result = await mockDetectObjects();
+      }
       
-      toast.success("Item identified successfully!");
-    }, 2000);
+      if (result) {
+        setScanResult(result);
+        toast.success("Item identified successfully!");
+      }
+    } catch (error) {
+      console.error("Error processing image:", error);
+      toast.error("Failed to analyze the image. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const resetScan = () => {
@@ -146,7 +153,16 @@ export const ScanInterface = () => {
                 className="w-full h-full object-contain"
               />
               
-              {scanResult && (
+              {isProcessing && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                    <p className="text-white">Analyzing with YOLO...</p>
+                  </div>
+                </div>
+              )}
+              
+              {scanResult && !isProcessing && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -237,7 +253,7 @@ export const ScanInterface = () => {
             >
               <RefreshCw className="mr-2 w-4 h-4" /> New Scan
             </Button>
-            {scanResult && (
+            {scanResult && !isProcessing && (
               <Button 
                 onClick={() => {
                   toast.success(`Added ${scanResult.quantity} ${scanResult.name}(s) to inventory!`);
